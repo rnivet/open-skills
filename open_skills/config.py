@@ -33,8 +33,8 @@ class Settings(BaseSettings):
     reload: bool = False
 
     # Database
-    postgres_url: str = Field(
-        ...,  # Required
+    postgres_url: Optional[str] = Field(
+        default=None,
         description="PostgreSQL connection URL with asyncpg driver",
     )
     db_echo: bool = False  # SQLAlchemy echo SQL statements
@@ -42,16 +42,16 @@ class Settings(BaseSettings):
     db_max_overflow: int = 10
 
     # OpenAI (for embeddings)
-    openai_api_key: str = Field(
-        ...,  # Required
+    openai_api_key: Optional[str] = Field(
+        default=None,
         description="OpenAI API key for embeddings",
     )
     embedding_model: str = "text-embedding-3-large"
     embedding_dimensions: int = 1536
 
     # Security & Encryption
-    jwt_secret: str = Field(
-        ...,  # Required
+    jwt_secret: Optional[str] = Field(
+        default=None,
         description="Secret key for JWT token signing and encryption",
     )
     jwt_algorithm: str = "HS256"
@@ -110,9 +110,9 @@ class Settings(BaseSettings):
 
     @field_validator("postgres_url")
     @classmethod
-    def validate_postgres_url(cls, v: str) -> str:
+    def validate_postgres_url(cls, v: Optional[str]) -> Optional[str]:
         """Validate PostgreSQL URL uses asyncpg driver."""
-        if not v.startswith("postgresql+asyncpg://"):
+        if v is not None and not v.startswith("postgresql+asyncpg://"):
             raise ValueError(
                 "POSTGRES_URL must use asyncpg driver (postgresql+asyncpg://...)"
             )
@@ -121,6 +121,8 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         """Alias for postgres_url."""
+        if self.postgres_url is None:
+            raise ValueError("postgres_url is not configured")
         return self.postgres_url
 
     @property
@@ -163,5 +165,5 @@ def reload_settings() -> Settings:
     return _settings
 
 
-# Convenience export
-settings = get_settings()
+# Removed module-level settings export to make initialization lazy
+# Use get_settings() instead

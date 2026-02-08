@@ -2,7 +2,7 @@
 Database package exports.
 """
 
-from .base import Base, get_db, init_db, dispose_db, engine, AsyncSessionLocal
+from .base import Base, get_db, init_db, dispose_db, get_engine, get_session_factory
 from .models import (
     Org,
     User,
@@ -19,8 +19,8 @@ __all__ = [
     "get_db",
     "init_db",
     "dispose_db",
-    "engine",
-    "AsyncSessionLocal",
+    "get_engine",
+    "get_session_factory",
     # Models
     "Org",
     "User",

@@ -10,7 +10,7 @@ from uuid import UUID
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.core.exceptions import (
     SkillNotFoundError,
     SkillVersionNotFoundError,
@@ -36,7 +36,7 @@ class SkillManager:
             storage_root: Root directory for skill storage (defaults to settings)
         """
         self.db = db
-        self.storage_root = storage_root or settings.storage_root
+        self.storage_root = storage_root or get_settings().storage_root
 
     async def create_skill(
         self,

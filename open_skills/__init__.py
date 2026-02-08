@@ -10,7 +10,7 @@ __version__ = "0.2.0"
 from .core.manager import SkillManager
 from .core.router import SkillRouter
 from .core.executor import SkillExecutor
-from .core.library import configure, get_config, is_configured
+from .core.library import configure, get_config, is_configured, init_db
 
 # Library mode - Discovery and tools
 from .core.adapters.discovery import register_skills_from_folder, watch_skills_folder
@@ -59,6 +59,7 @@ __all__ = [
     "configure",
     "get_config",
     "is_configured",
+    "init_db",
     # Discovery
     "register_skills_from_folder",
     "watch_skills_folder",

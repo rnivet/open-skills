@@ -11,7 +11,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.core.exceptions import ArtifactError, ArtifactSizeExceededError, StorageError
 from open_skills.core.telemetry import get_logger
 from open_skills.db.models import SkillArtifact, SkillRun
@@ -30,7 +30,7 @@ class ArtifactsManager:
             db: Database session
         """
         self.db = db
-        self.artifacts_root = settings.artifacts_root
+        self.artifacts_root = get_settings().artifacts_root
 
     def _compute_checksum(self, file_path: Path) -> str:
         """

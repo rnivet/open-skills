@@ -17,7 +17,7 @@ from contextlib import redirect_stdout, redirect_stderr
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.core.exceptions import (
     SkillExecutionError,
     SkillTimeoutError,
@@ -234,6 +234,7 @@ class SkillExecutor:
 
         # Get timeout
         metadata = skill_version.metadata_yaml or {}
+        settings = get_settings()
         timeout = (
             timeout_seconds
             or metadata.get("timeout_seconds")

@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.core.telemetry import logger
-from open_skills.db.base import Base, engine as default_engine
+from open_skills.db.base import Base, get_engine, get_session_factory, init_db as db_init_db
 
 
 class LibraryConfig:
@@ -29,21 +29,23 @@ class LibraryConfig:
     @property
     def database_url(self) -> Optional[str]:
         """Get configured database URL."""
-        return self._database_url or settings.database_url
+        if self._database_url:
+            return self._database_url
+        settings = get_settings()
+        return settings.database_url
 
     @property
     def engine(self):
         """Get database engine."""
         if self._engine is None:
-            return default_engine
+            return get_engine()
         return self._engine
 
     @property
     def session_factory(self):
         """Get session factory."""
         if self._session_factory is None:
-            from open_skills.db.base import AsyncSessionLocal
-            return AsyncSessionLocal
+            return get_session_factory()
         return self._session_factory
 
     async def get_db(self) -> AsyncSession:
@@ -68,11 +70,12 @@ class LibraryConfig:
 _lib_config = LibraryConfig()
 
 
-def configure(
+async def configure(
     database_url: Optional[str] = None,
     storage_root: Optional[Path] = None,
     artifacts_root: Optional[Path] = None,
     openai_api_key: Optional[str] = None,
+    auto_init_db: bool = False,
     **kwargs
 ) -> None:
     """
@@ -86,22 +89,26 @@ def configure(
         storage_root: Root directory for skill bundle storage
         artifacts_root: Root directory for artifacts
         openai_api_key: OpenAI API key for embeddings
+        auto_init_db: If True, automatically create database tables
         **kwargs: Additional settings to override
 
     Example:
         ```python
         from open_skills.core.library import configure
 
-        configure(
+        await configure(
             database_url="postgresql+asyncpg://localhost/mydb",
             storage_root="/app/skills",
-            openai_api_key="sk-..."
+            openai_api_key="sk-...",
+            auto_init_db=True
         )
         ```
     """
     global _lib_config
 
     logger.info("configuring_library_mode")
+
+    settings = get_settings()
 
     # Update database URL
     if database_url:
@@ -146,6 +153,10 @@ def configure(
         storage_root=str(settings.storage_root),
     )
 
+    # Auto-initialize database if requested
+    if auto_init_db:
+        await init_db()
+
 
 def get_config() -> LibraryConfig:
     """
@@ -181,14 +192,18 @@ async def init_db() -> None:
     """
     Initialize database (create tables).
     Note: In production, use Alembic migrations instead.
+
+    Uses the library-configured engine if available, otherwise uses default engine.
     """
-    if not _lib_config.initialized:
-        logger.warning("init_db_called_before_configuration")
-
-    async with _lib_config.engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    logger.info("database_initialized")
+    if _lib_config._engine:
+        # Use library-configured engine
+        async with _lib_config.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("database_initialized_library_mode")
+    else:
+        # Use default engine from db.base
+        await db_init_db()
+        logger.info("database_initialized_default")
 
 
 async def dispose() -> None:

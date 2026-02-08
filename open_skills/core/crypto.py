@@ -7,7 +7,7 @@ from typing import Optional
 
 from jose import jwt, JWTError
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.core.exceptions import AuthenticationError
 
 
@@ -25,6 +25,7 @@ def encrypt_value(value: str, secret: Optional[str] = None) -> str:
     Raises:
         AuthenticationError: If encryption fails
     """
+    settings = get_settings()
     secret_key = secret or settings.jwt_secret
     try:
         token = jwt.encode(
@@ -51,6 +52,7 @@ def decrypt_value(token: str, secret: Optional[str] = None) -> str:
     Raises:
         AuthenticationError: If decryption fails or token is invalid
     """
+    settings = get_settings()
     secret_key = secret or settings.jwt_secret
     try:
         data = jwt.decode(
@@ -79,6 +81,7 @@ def encrypt_dict(data: dict, secret: Optional[str] = None) -> str:
     Raises:
         AuthenticationError: If encryption fails
     """
+    settings = get_settings()
     secret_key = secret or settings.jwt_secret
     try:
         token = jwt.encode(
@@ -105,6 +108,7 @@ def decrypt_dict(token: str, secret: Optional[str] = None) -> dict:
     Raises:
         AuthenticationError: If decryption fails or token is invalid
     """
+    settings = get_settings()
     secret_key = secret or settings.jwt_secret
     try:
         data = jwt.decode(

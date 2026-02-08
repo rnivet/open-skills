@@ -23,7 +23,7 @@ from open_skills.service.api.deps import (
     get_pagination,
     Pagination,
 )
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.core.manager import SkillManager
 from open_skills.core.router import SkillRouter
 from open_skills.core.executor import SkillExecutor
@@ -49,6 +49,7 @@ router = APIRouter(prefix="/api")
 async def health_check():
     """Health check endpoint."""
     from datetime import datetime, timezone
+    settings = get_settings()
     return schemas.HealthResponse(
         status="healthy",
         version=settings.app_version,

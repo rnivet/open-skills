@@ -12,7 +12,7 @@ import json
 
 import structlog
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 
 
 # Configure structlog for structured logging
@@ -29,32 +29,62 @@ def add_timestamp(logger: Any, method_name: str, event_dict: Dict) -> Dict:
     return event_dict
 
 
-# Configure structlog processors
-processors = [
-    structlog.contextvars.merge_contextvars,
-    add_timestamp,
-    add_log_level,
-    structlog.processors.StackInfoRenderer(),
-    structlog.processors.format_exc_info,
-]
+# Lazy initialization flag
+_structlog_configured = False
 
-if settings.log_format == "json":
-    processors.append(structlog.processors.JSONRenderer())
-else:
-    processors.append(structlog.dev.ConsoleRenderer())
 
-structlog.configure(
-    processors=processors,
-    wrapper_class=structlog.make_filtering_bound_logger(
-        logging.getLevelName(settings.log_level)
-    ),
-    context_class=dict,
-    logger_factory=structlog.PrintLoggerFactory(),
-    cache_logger_on_first_use=True,
-)
+def _ensure_structlog_configured():
+    """Ensure structlog is configured (lazy initialization)."""
+    global _structlog_configured
+    if not _structlog_configured:
+        settings = get_settings()
 
-# Get logger instance
-logger = structlog.get_logger("open-skills")
+        # Configure structlog processors
+        processors = [
+            structlog.contextvars.merge_contextvars,
+            add_timestamp,
+            add_log_level,
+            structlog.processors.StackInfoRenderer(),
+            structlog.processors.format_exc_info,
+        ]
+
+        if settings.log_format == "json":
+            processors.append(structlog.processors.JSONRenderer())
+        else:
+            processors.append(structlog.dev.ConsoleRenderer())
+
+        structlog.configure(
+            processors=processors,
+            wrapper_class=structlog.make_filtering_bound_logger(
+                logging.getLevelName(settings.log_level)
+            ),
+            context_class=dict,
+            logger_factory=structlog.PrintLoggerFactory(),
+            cache_logger_on_first_use=True,
+        )
+        _structlog_configured = True
+
+
+# Lazy logger getter
+_logger = None
+
+
+def _get_default_logger():
+    """Get default logger instance (lazy initialization)."""
+    global _logger
+    if _logger is None:
+        _ensure_structlog_configured()
+        _logger = structlog.get_logger("open-skills")
+    return _logger
+
+
+# Create a property-like object for backward compatibility
+class LazyLogger:
+    def __getattr__(self, name):
+        return getattr(_get_default_logger(), name)
+
+
+logger = LazyLogger()
 
 
 def get_logger(name: Optional[str] = None) -> Any:
@@ -67,6 +97,7 @@ def get_logger(name: Optional[str] = None) -> Any:
     Returns:
         Structured logger instance
     """
+    _ensure_structlog_configured()
     return structlog.get_logger(name or "open-skills")
 
 
@@ -77,6 +108,7 @@ class LangfuseStub:
     """
 
     def __init__(self):
+        settings = get_settings()
         self.enabled = settings.langfuse_enabled
         self.logger = get_logger("langfuse")
 

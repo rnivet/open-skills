@@ -9,7 +9,7 @@ import httpx
 from sqlalchemy import select, and_, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.core.exceptions import EmbeddingError
 from open_skills.core.telemetry import get_logger, trace_operation
 from open_skills.db.models import SkillVersion, Skill
@@ -44,6 +44,7 @@ class SkillRouter:
         """
         with trace_operation("generate_embedding", {"text_length": len(text)}):
             try:
+                settings = get_settings()
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.post(
                         "https://api.openai.com/v1/embeddings",

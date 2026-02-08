@@ -22,6 +22,7 @@ async def mount_open_skills(
     auto_register: bool = True,
     auto_publish: bool = False,
     database_url: Optional[str] = None,
+    auto_init_db: bool = False,
     **configure_kwargs
 ) -> None:
     """
@@ -40,6 +41,7 @@ async def mount_open_skills(
         auto_register: Auto-register skills from skills_dir at startup
         auto_publish: Auto-publish registered skills
         database_url: Database URL (if not configured via configure())
+        auto_init_db: If True, automatically create database tables
         **configure_kwargs: Additional configuration options
 
     Example:
@@ -81,7 +83,7 @@ async def mount_open_skills(
     config = get_config()
     if not config.initialized:
         if database_url:
-            configure(database_url=database_url, **configure_kwargs)
+            await configure(database_url=database_url, auto_init_db=auto_init_db, **configure_kwargs)
         else:
             logger.warning(
                 "open_skills_not_configured",
@@ -142,6 +144,7 @@ async def mount_tools_only(
     auto_register: bool = True,
     auto_publish: bool = False,
     database_url: Optional[str] = None,
+    auto_init_db: bool = False,
     **configure_kwargs
 ) -> None:
     """
@@ -156,6 +159,7 @@ async def mount_tools_only(
         auto_register: Auto-register skills from skills_dir
         auto_publish: Auto-publish registered skills
         database_url: Database URL
+        auto_init_db: If True, automatically create database tables
         **configure_kwargs: Additional configuration options
 
     Example:
@@ -179,7 +183,7 @@ async def mount_tools_only(
     config = get_config()
     if not config.initialized:
         if database_url:
-            configure(database_url=database_url, **configure_kwargs)
+            await configure(database_url=database_url, auto_init_db=auto_init_db, **configure_kwargs)
 
     # Auto-register skills
     if auto_register and skills_dir:

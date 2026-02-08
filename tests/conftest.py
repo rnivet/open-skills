@@ -8,11 +8,12 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.db.base import Base
 
 
 # Override settings for testing
+settings = get_settings()
 settings.postgres_url = "postgresql+asyncpg://postgres:postgres@localhost:5432/openskills_test"
 settings.storage_root = Path("./test_storage")
 settings.artifacts_root = Path("./test_artifacts")
