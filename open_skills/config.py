@@ -41,13 +41,24 @@ class Settings(BaseSettings):
     db_pool_size: int = 5
     db_max_overflow: int = 10
 
-    # OpenAI (for embeddings)
-    openai_api_key: Optional[str] = Field(
-        default=None,
-        description="OpenAI API key for embeddings",
+    # Embeddings
+    embedding_provider: str = Field(
+        default="openai",
+        pattern="^(openai|mistral)$",
+        description="Embedding provider (openai or mistral)",
     )
-    embedding_model: str = "text-embedding-3-large"
-    embedding_dimensions: int = 1536
+    embedding_api_key: str = Field(
+        ...,  # Required
+        description="API key for embedding provider",
+    )
+    embedding_model: Optional[str] = Field(
+        default=None,
+        description="Model name (uses provider default if not set)",
+    )
+    embedding_dimensions: Optional[int] = Field(
+        default=None,
+        description="Vector dimensions (uses provider default if not set)",
+    )
 
     # Security & Encryption
     jwt_secret: Optional[str] = Field(
@@ -134,6 +145,11 @@ class Settings(BaseSettings):
     def is_development(self) -> bool:
         """Check if running in development environment."""
         return self.environment == "development"
+
+    @property
+    def openai_api_key(self) -> str:
+        """Backward compatibility alias for embedding_api_key."""
+        return self.embedding_api_key
 
 
 # Global settings instance

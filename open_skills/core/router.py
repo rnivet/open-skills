@@ -5,11 +5,11 @@ Skill Router for embedding-based skill discovery and auto-selection.
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 
-import httpx
 from sqlalchemy import select, and_, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from open_skills.config import get_settings
+from open_skills.config import settings
+from open_skills.core.embeddings import generate_embedding as _generate_embedding
 from open_skills.core.exceptions import EmbeddingError
 from open_skills.core.telemetry import get_logger, trace_operation
 from open_skills.db.models import SkillVersion, Skill
@@ -31,7 +31,7 @@ class SkillRouter:
 
     async def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding vector for text using OpenAI API.
+        Generate embedding vector for text using configured provider.
 
         Args:
             text: Input text
@@ -44,34 +44,23 @@ class SkillRouter:
         """
         with trace_operation("generate_embedding", {"text_length": len(text)}):
             try:
-                settings = get_settings()
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    response = await client.post(
-                        "https://api.openai.com/v1/embeddings",
-                        headers={
-                            "Authorization": f"Bearer {settings.openai_api_key}",
-                            "Content-Type": "application/json",
-                        },
-                        json={
-                            "input": text,
-                            "model": settings.embedding_model,
-                        },
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    embedding = data["data"][0]["embedding"]
+                embedding = await _generate_embedding(
+                    text=text,
+                    provider=settings.embedding_provider,
+                    api_key=settings.embedding_api_key,
+                    model=settings.embedding_model,
+                )
 
-                    logger.info(
-                        "embedding_generated",
-                        text_length=len(text),
-                        embedding_dim=len(embedding),
-                    )
+                logger.info(
+                    "embedding_generated",
+                    text_length=len(text),
+                    embedding_dim=len(embedding),
+                    provider=settings.embedding_provider,
+                )
 
-                    return embedding
-            except httpx.HTTPError as e:
+                return embedding
+            except Exception as e:
                 raise EmbeddingError(f"Failed to generate embedding: {e}")
-            except (KeyError, IndexError) as e:
-                raise EmbeddingError(f"Invalid embedding response format: {e}")
 
     async def embed_skill_version(
         self,

@@ -74,7 +74,9 @@ async def configure(
     database_url: Optional[str] = None,
     storage_root: Optional[Path] = None,
     artifacts_root: Optional[Path] = None,
-    openai_api_key: Optional[str] = None,
+    embedding_provider: Optional[str] = None,
+    embedding_api_key: Optional[str] = None,
+    openai_api_key: Optional[str] = None,  # Deprecated: use embedding_api_key
     auto_init_db: bool = False,
     **kwargs
 ) -> None:
@@ -88,7 +90,9 @@ async def configure(
         database_url: PostgreSQL connection URL (postgresql+asyncpg://...)
         storage_root: Root directory for skill bundle storage
         artifacts_root: Root directory for artifacts
-        openai_api_key: OpenAI API key for embeddings
+        embedding_provider: Embedding provider ("openai" or "mistral")
+        embedding_api_key: API key for embedding provider
+        openai_api_key: (Deprecated) Alias for embedding_api_key
         auto_init_db: If True, automatically create database tables
         **kwargs: Additional settings to override
 
@@ -99,7 +103,7 @@ async def configure(
         await configure(
             database_url="postgresql+asyncpg://localhost/mydb",
             storage_root="/app/skills",
-            openai_api_key="sk-...",
+            embedding_api_key="sk-...",
             auto_init_db=True
         )
         ```
@@ -137,8 +141,14 @@ async def configure(
         settings.artifacts_root = Path(artifacts_root)
         settings.artifacts_root.mkdir(parents=True, exist_ok=True)
 
-    if openai_api_key:
-        settings.openai_api_key = openai_api_key
+    # Handle embedding configuration with backward compatibility
+    if embedding_provider:
+        settings.embedding_provider = embedding_provider
+
+    # Backward compatibility: openai_api_key -> embedding_api_key
+    api_key = embedding_api_key or openai_api_key
+    if api_key:
+        settings.embedding_api_key = api_key
 
     # Apply additional settings
     for key, value in kwargs.items():
