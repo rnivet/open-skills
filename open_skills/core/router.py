@@ -8,7 +8,7 @@ from uuid import UUID
 from sqlalchemy import select, and_, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.core.embeddings import generate_embedding as _generate_embedding
 from open_skills.core.exceptions import EmbeddingError
 from open_skills.core.telemetry import get_logger, trace_operation
@@ -44,6 +44,7 @@ class SkillRouter:
         """
         with trace_operation("generate_embedding", {"text_length": len(text)}):
             try:
+                settings = get_settings()
                 embedding = await _generate_embedding(
                     text=text,
                     provider=settings.embedding_provider,

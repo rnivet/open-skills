@@ -16,8 +16,9 @@ __all__ = ["app"]
 
 if __name__ == "__main__":
     import uvicorn
-    from open_skills.config import settings
+    from open_skills.config import get_settings
 
+    settings = get_settings()
     uvicorn.run(
         "open_skills.main:app",
         host=settings.host,

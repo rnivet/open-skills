@@ -185,8 +185,27 @@ class SpanStub:
         )
 
 
-# Global Langfuse stub instance
-langfuse = LangfuseStub()
+# Lazy initialization for Langfuse
+_langfuse: Optional[LangfuseStub] = None
+
+
+def get_langfuse() -> LangfuseStub:
+    """Get Langfuse stub instance (lazy initialization)."""
+    global _langfuse
+    if _langfuse is None:
+        _langfuse = LangfuseStub()
+    return _langfuse
+
+
+# Backward compatibility wrapper
+class LazyLangfuse:
+    """Lazy wrapper for langfuse to maintain backward compatibility."""
+    def __getattr__(self, name):
+        return getattr(get_langfuse(), name)
+
+
+# Global Langfuse stub instance (lazy)
+langfuse = LazyLangfuse()
 
 
 @contextmanager
@@ -224,7 +243,7 @@ def run_trace(
         user_id=user_id,
     )
 
-    trace = langfuse.trace(
+    trace = get_langfuse().trace(
         name=trace_name,
         user_id=user_id,
         metadata={"run_id": str(run_id), "skill_name": skill_name},
@@ -253,7 +272,7 @@ def run_trace(
         trace.end(metadata={"status": "error", "error": str(e), "duration_s": duration})
         raise
     finally:
-        langfuse.flush()
+        get_langfuse().flush()
 
 
 @contextmanager

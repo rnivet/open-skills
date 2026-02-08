@@ -47,8 +47,8 @@ class Settings(BaseSettings):
         pattern="^(openai|mistral)$",
         description="Embedding provider (openai or mistral)",
     )
-    embedding_api_key: str = Field(
-        ...,  # Required
+    embedding_api_key: Optional[str] = Field(
+        default=None,
         description="API key for embedding provider",
     )
     embedding_model: Optional[str] = Field(

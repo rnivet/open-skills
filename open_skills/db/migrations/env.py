@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 # Import models and config
-from open_skills.config import settings
+from open_skills.config import get_settings
 from open_skills.db.base import Base
 from open_skills.db import models  # noqa: F401 - Import to register models
 
@@ -21,6 +21,7 @@ from open_skills.db import models  # noqa: F401 - Import to register models
 config = context.config
 
 # Override sqlalchemy.url with the one from settings
+settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # Interpret the config file for Python logging.
