@@ -31,6 +31,34 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def get_embedding_dimension() -> int:
+    """
+    Get the configured embedding dimension.
+
+    Returns the dimension from settings if configured, otherwise returns
+    the appropriate default based on the provider (1536 for OpenAI, 1024 for Mistral).
+    If settings aren't configured yet, defaults to 1536.
+
+    Returns:
+        int: Vector dimension for embeddings
+    """
+    try:
+        from open_skills.config import get_settings
+        settings = get_settings()
+
+        # If explicitly set, use that
+        if settings.embedding_dimensions is not None:
+            return settings.embedding_dimensions
+
+        # Otherwise, use provider default
+        from open_skills.core.embeddings import PROVIDERS
+        provider_config = PROVIDERS.get(settings.embedding_provider, {})
+        return provider_config.get("default_dimensions", 1536)
+    except Exception:
+        # If settings aren't configured yet, use OpenAI default
+        return 1536
+
+
 class Org(Base):
     """Organization model."""
 
@@ -179,7 +207,7 @@ class SkillVersion(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     metadata_yaml: Mapped[dict] = mapped_column(JSONB, nullable=False)
     embedding: Mapped[Optional[list[float]]] = mapped_column(
-        Vector(1536),  # OpenAI text-embedding-3-large dimension
+        Vector(get_embedding_dimension()),  # Dynamic dimension based on provider
         nullable=True,
     )
     bundle_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

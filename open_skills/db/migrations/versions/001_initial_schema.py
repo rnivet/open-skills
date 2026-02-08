@@ -12,6 +12,9 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from pgvector.sqlalchemy import Vector
 
+# Import helper for dynamic vector dimensions
+from open_skills.db.models import get_embedding_dimension
+
 # revision identifiers, used by Alembic.
 revision: str = '001'
 down_revision: Union[str, None] = None
@@ -73,7 +76,7 @@ def upgrade() -> None:
         sa.Column('entrypoint', sa.String(length=500), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('metadata_yaml', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column('embedding', Vector(1536), nullable=True),
+        sa.Column('embedding', Vector(get_embedding_dimension()), nullable=True),
         sa.Column('bundle_path', sa.Text(), nullable=True),
         sa.Column('is_published', sa.Boolean(), nullable=False),
         sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
